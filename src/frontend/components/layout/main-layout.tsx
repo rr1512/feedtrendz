@@ -4,8 +4,6 @@ import { ReactNode } from 'react'
 import { Sidebar } from './sidebar'
 import { Header } from './header'
 import { cn } from '@/frontend/lib/utils'
-import { ToastProvider } from '@/frontend/contexts/toast-context'
-import { ToastManager } from '@/frontend/components/toast-manager'
 
 interface MainLayoutProps {
   children: ReactNode
@@ -38,32 +36,27 @@ export function MainLayout({
   workspaces 
 }: MainLayoutProps) {
   return (
-    <ToastProvider>
-      <div className="flex h-screen bg-background">
-        {/* Sidebar */}
-        <Sidebar />
-        
-        {/* Main Content */}
-        <div className="flex-1 flex flex-col overflow-hidden">
-          {/* Header */}
-          <Header 
-            user={user}
-            workspace={workspace}
-            workspaces={workspaces}
-          />
-          
-          {/* Page Content */}
-          <main className={cn(
-            "flex-1 overflow-y-auto bg-background p-6",
-            className
-          )}>
-            {children}
-          </main>
-        </div>
-      </div>
+    <div className="flex h-screen bg-background">
+      {/* Sidebar */}
+      <Sidebar />
       
-      {/* Toast Manager */}
-      <ToastManager />
-    </ToastProvider>
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Header */}
+        <Header 
+          user={user}
+          workspace={workspace}
+          workspaces={workspaces}
+        />
+        
+        {/* Page Content */}
+        <main className={cn(
+          "flex-1 overflow-y-auto bg-background p-6",
+          className
+        )}>
+          {children}
+        </main>
+      </div>
+    </div>
   )
 }

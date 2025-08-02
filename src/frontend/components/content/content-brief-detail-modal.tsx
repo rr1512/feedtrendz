@@ -16,7 +16,7 @@ import {
   FileText, 
   Download, 
   Upload, 
-
+  FileAudio,
   CheckCircle,
   XCircle,
   Trash2,
@@ -26,8 +26,10 @@ import {
   Image,
   Music,
   Video,
-  X
+  X,
+  Share2
 } from 'lucide-react'
+import { SocialMediaPublisher } from './social-media-publisher'
 
 interface ContentBrief {
   id: string
@@ -190,6 +192,43 @@ export function ContentBriefDetailModal({ content, isOpen, onClose, onUpdate, us
       })
     } catch (error) {
       console.error('Error previewing file:', error)
+    }
+  }
+
+  const handleDownload = async (file: any) => {
+    try {
+      const response = await fetch(`/api/files/${file.id}/download`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to download file')
+      }
+
+      // Create blob from response
+      const blob = await response.blob()
+      
+      // Create download link
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = file.file_name || 'download'
+      
+      // Trigger download
+      document.body.appendChild(link)
+      link.click()
+      
+      // Cleanup
+      document.body.removeChild(link)
+      window.URL.revokeObjectURL(url)
+      
+      toast.success('File downloaded successfully')
+    } catch (error) {
+      console.error('Error downloading file:', error)
+      toast.error('Failed to download file')
     }
   }
 
@@ -398,14 +437,14 @@ export function ContentBriefDetailModal({ content, isOpen, onClose, onUpdate, us
             <div className="space-y-4">
               {/* Script - Hidden for Social Media Manager */}
               {userRole !== 'social_media_manager' && (
-                <div>
-                  <Label className="text-sm font-medium text-gray-700">Script</Label>
-                  <div className="mt-1 p-3 bg-gray-50 rounded-md">
-                    <p className="text-sm text-gray-900 whitespace-pre-wrap">
-                      {content.script}
-                    </p>
-                  </div>
+              <div>
+                <Label className="text-sm font-medium text-gray-700">Script</Label>
+                <div className="mt-1 p-3 bg-gray-50 rounded-md">
+                  <p className="text-sm text-gray-900 whitespace-pre-wrap">
+                    {content.script}
+                  </p>
                 </div>
+              </div>
               )}
 
               <div>
@@ -518,27 +557,29 @@ export function ContentBriefDetailModal({ content, isOpen, onClose, onUpdate, us
                       const isPreviewable = ['video', 'audio', 'image'].includes(fileType)
                       
                       return (
-                      <div key={file.id} className="flex items-center gap-3 p-3 border rounded-md">
+                        <div 
+                          key={file.id} 
+                          className={`flex items-center gap-3 p-3 border rounded-md ${isPreviewable ? 'cursor-pointer hover:bg-gray-50 transition-colors' : ''}`}
+                          onClick={isPreviewable ? () => handlePreview(file) : undefined}
+                        >
                           {getFileIcon(fileType)}
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium truncate">{file.file_name}</p>
-                          <p className="text-xs text-gray-500">{formatFileSize(file.file_size)}</p>
-                        </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium truncate">{file.file_name}</p>
+                            <p className="text-xs text-gray-500">{formatFileSize(file.file_size)}</p>
+                          </div>
                           <div className="flex gap-1">
-                            {isPreviewable && (
-                              <Button 
-                                size="sm" 
-                                variant="outline"
-                                onClick={() => handlePreview(file)}
-                                title="Preview"
-                              >
-                                <Play className="w-4 h-4" />
-                              </Button>
-                            )}
-                            <Button size="sm" variant="outline" title="Download">
-                          <Download className="w-4 h-4" />
-                        </Button>
-                      </div>
+                            <Button 
+                              size="sm" 
+                              variant="outline" 
+                              title="Download"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                handleDownload(file)
+                              }}
+                            >
+                              <Download className="w-4 h-4" />
+                            </Button>
+                          </div>
                         </div>
                       )
                     })}
@@ -550,18 +591,34 @@ export function ContentBriefDetailModal({ content, isOpen, onClose, onUpdate, us
                 <div>
                   <h4 className="text-sm font-medium text-gray-700 mb-2">Edited Files</h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                    {editedFiles.map((file) => (
-                      <div key={file.id} className="flex items-center gap-3 p-3 border rounded-md">
-                        <FileText className="w-5 h-5 text-gray-400" />
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium truncate">{file.file_name}</p>
-                          <p className="text-xs text-gray-500">{formatFileSize(file.file_size)}</p>
+                    {editedFiles.map((file) => {
+                      const fileType = getFileType(file.file_name, file.file_type)
+                      const isPreviewable = ['video', 'audio', 'image'].includes(fileType)
+                      
+                      return (
+                        <div 
+                          key={file.id} 
+                          className={`flex items-center gap-3 p-3 border rounded-md ${isPreviewable ? 'cursor-pointer hover:bg-gray-50 transition-colors' : ''}`}
+                          onClick={isPreviewable ? () => handlePreview(file) : undefined}
+                        >
+                          {getFileIcon(fileType)}
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium truncate">{file.file_name}</p>
+                            <p className="text-xs text-gray-500">{formatFileSize(file.file_size)}</p>
+                          </div>
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleDownload(file)
+                            }}
+                          >
+                            <Download className="w-4 h-4" />
+                          </Button>
                         </div>
-                        <Button size="sm" variant="outline">
-                          <Download className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    ))}
+                      )
+                    })}
                   </div>
                 </div>
               )}
@@ -590,29 +647,26 @@ export function ContentBriefDetailModal({ content, isOpen, onClose, onUpdate, us
                       const isPreviewable = ['video', 'audio', 'image'].includes(fileType)
                       
                       return (
-                        <div key={file.id} className="flex items-center gap-3 p-3 bg-white border border-blue-200 rounded-md">
+                        <div 
+                          key={file.id} 
+                          className={`flex items-center gap-3 p-3 bg-white border border-blue-200 rounded-md ${isPreviewable ? 'cursor-pointer hover:bg-blue-50 transition-colors' : ''}`}
+                          onClick={isPreviewable ? () => handlePreview(file) : undefined}
+                        >
                           {getFileIcon(fileType)}
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-medium truncate text-blue-900">{file.file_name}</p>
                             <p className="text-xs text-blue-600">{formatFileSize(file.file_size)}</p>
                           </div>
                           <div className="flex gap-1">
-                            {isPreviewable && (
-                              <Button 
-                                size="sm" 
-                                variant="outline"
-                                onClick={() => handlePreview(file)}
-                                title="Preview"
-                                className="border-blue-300 text-blue-700 hover:bg-blue-50"
-                              >
-                                <Play className="w-4 h-4" />
-                              </Button>
-                            )}
                             <Button 
                               size="sm" 
                               variant="outline" 
                               title="Download"
                               className="border-blue-300 text-blue-700 hover:bg-blue-50"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                handleDownload(file)
+                              }}
                             >
                               <Download className="w-4 h-4" />
                             </Button>
@@ -652,29 +706,26 @@ export function ContentBriefDetailModal({ content, isOpen, onClose, onUpdate, us
                           const isPreviewable = ['video', 'audio', 'image'].includes(fileType)
                           
                           return (
-                            <div key={file.id} className="flex items-center gap-3 p-3 bg-white border border-green-200 rounded-md">
+                            <div 
+                              key={file.id} 
+                              className={`flex items-center gap-3 p-3 bg-white border border-green-200 rounded-md ${isPreviewable ? 'cursor-pointer hover:bg-green-50 transition-colors' : ''}`}
+                              onClick={isPreviewable ? () => handlePreview(file) : undefined}
+                            >
                               {getFileIcon(fileType)}
                               <div className="flex-1 min-w-0">
                                 <p className="text-sm font-medium truncate text-green-900">{file.file_name}</p>
                                 <p className="text-xs text-green-600">{formatFileSize(file.file_size)}</p>
                               </div>
                               <div className="flex gap-1">
-                                {isPreviewable && (
-                                  <Button 
-                                    size="sm" 
-                                    variant="outline"
-                                    onClick={() => handlePreview(file)}
-                                    title="Preview"
-                                    className="border-green-300 text-green-700 hover:bg-green-50"
-                                  >
-                                    <Play className="w-4 h-4" />
-                                  </Button>
-                                )}
                                 <Button 
                                   size="sm" 
                                   variant="outline" 
                                   title="Download"
                                   className="border-green-300 text-green-700 hover:bg-green-50"
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    handleDownload(file)
+                                  }}
                                 >
                                   <Download className="w-4 h-4" />
                                 </Button>
@@ -845,7 +896,29 @@ export function ContentBriefDetailModal({ content, isOpen, onClose, onUpdate, us
               )}
             </div>
 
-
+            {/* Social Media Publishing */}
+            {content.status === 'approved' && (
+              <>
+                <Separator />
+                <div className="space-y-4">
+                  <Label className="text-lg font-medium flex items-center gap-2">
+                    <Share2 className="w-5 h-5" />
+                    Publish to Social Media
+                  </Label>
+                  
+                  <SocialMediaPublisher 
+                    content={content}
+                    onPublishSuccess={() => {
+                      toast.success('Content published successfully!')
+                      onUpdate?.()
+                    }}
+                    onPublishError={(error: string) => {
+                      toast.error(error)
+                    }}
+                  />
+                </div>
+              </>
+            )}
           </div>
         </div>
       </SheetContent>
@@ -853,31 +926,26 @@ export function ContentBriefDetailModal({ content, isOpen, onClose, onUpdate, us
 
     {/* File Preview Modal */}
     <Dialog open={!!previewFile} onOpenChange={() => setPreviewFile(null)}>
-      <DialogContent className="max-w-4xl max-h-[90vh] bg-gradient-to-br from-white to-gray-50 border-0 shadow-2xl">
-        <DialogHeader className="border-b pb-4">
-          <div className="flex items-center justify-between">
-            <DialogTitle className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              Preview: {previewFile?.name}
-            </DialogTitle>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setPreviewFile(null)}
-              className="hover:bg-red-100 hover:text-red-600 transition-colors"
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
-        </DialogHeader>
+      <DialogContent className="max-w-5xl max-h-[95vh] p-0 bg-black/95 border-0 shadow-2xl overflow-hidden">
+        {/* Close Button */}
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setPreviewFile(null)}
+          className="absolute top-4 right-4 z-10 bg-black/50 hover:bg-black/70 text-white border-0 rounded-full w-10 h-10"
+        >
+          <X className="h-5 w-5" />
+        </Button>
         
-        <div className="flex-1 flex items-center justify-center p-4">
+        {/* Content Container */}
+        <div className="flex items-center justify-center w-full h-full min-h-[400px] p-4">
           {previewFile && (
             <>
               {previewFile.type === 'image' && (
                 <img
                   src={previewFile.url}
                   alt={previewFile.name}
-                  className="max-w-full max-h-full object-contain rounded-lg"
+                  className="max-w-full max-h-full object-contain rounded-lg shadow-lg"
                 />
               )}
               
@@ -885,18 +953,24 @@ export function ContentBriefDetailModal({ content, isOpen, onClose, onUpdate, us
                 <video
                   src={previewFile.url}
                   controls
-                  className="max-w-full max-h-full rounded-lg"
+                  className="max-w-full max-h-full rounded-lg shadow-lg"
+                  autoPlay
                 >
                   Your browser does not support the video tag.
                 </video>
               )}
               
               {previewFile.type === 'audio' && (
-                <div className="w-full max-w-md">
+                <div className="w-full max-w-lg bg-white/10 backdrop-blur-sm rounded-xl p-8">
+                  <div className="text-center text-white mb-6">
+                    <FileAudio className="h-16 w-16 mx-auto mb-4 text-white/70" />
+                    <p className="text-lg font-medium">{previewFile.name}</p>
+                  </div>
                   <audio
                     src={previewFile.url}
                     controls
                     className="w-full"
+                    autoPlay
                   >
                     Your browser does not support the audio tag.
                   </audio>
@@ -904,12 +978,13 @@ export function ContentBriefDetailModal({ content, isOpen, onClose, onUpdate, us
               )}
               
               {previewFile.type === 'document' && (
-                <div className="text-center text-muted-foreground">
-                  <FileText className="h-16 w-16 mx-auto mb-4" />
-                  <p>Document preview not available</p>
+                <div className="text-center text-white bg-white/10 backdrop-blur-sm rounded-xl p-8 max-w-md">
+                  <FileText className="h-16 w-16 mx-auto mb-4 text-white/70" />
+                  <p className="text-lg font-medium mb-2">{previewFile.name}</p>
+                  <p className="text-white/70 mb-6">Document preview not available</p>
               <Button 
                     variant="outline" 
-                    className="mt-4"
+                    className="border-white/30 text-white hover:bg-white/10"
                     onClick={() => window.open(previewFile.url, '_blank')}
                   >
                     <Download className="w-4 h-4 mr-2" />

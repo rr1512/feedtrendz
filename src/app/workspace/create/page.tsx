@@ -9,9 +9,9 @@ import { Button } from '@/frontend/components/ui/button'
 import { Input } from '@/frontend/components/ui/input'
 import { Label } from '@/frontend/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/frontend/components/ui/card'
-import { Alert, AlertDescription } from '@/frontend/components/ui/alert'
+import { useToast } from '@/frontend/contexts/toast-context'
 import { ArrowLeft, Plus, Loader2 } from 'lucide-react'
-import MainLayout from '@/frontend/components/layout/main-layout'
+import { MainLayout } from '@/frontend/components/layout/main-layout'
 
 const createWorkspaceSchema = z.object({
   name: z.string().min(1, 'Workspace name is required').max(100, 'Workspace name too long')
@@ -21,8 +21,8 @@ type CreateWorkspaceInput = z.infer<typeof createWorkspaceSchema>
 
 export default function CreateWorkspacePage() {
   const router = useRouter()
+  const toast = useToast()
   const [isCreating, setIsCreating] = useState(false)
-  const [error, setError] = useState('')
 
   const {
     register,
@@ -35,7 +35,6 @@ export default function CreateWorkspacePage() {
   const onSubmit = async (data: CreateWorkspaceInput) => {
     try {
       setIsCreating(true)
-      setError('')
 
       const response = await fetch('/api/workspace', {
         method: 'POST',
@@ -51,10 +50,12 @@ export default function CreateWorkspacePage() {
         throw new Error(result.error || 'Failed to create workspace')
       }
 
+      toast.success('Workspace created successfully!', 'Redirecting to workspace...')
+      
       // Redirect to the new workspace
       router.push(`/workspace?id=${result.data.id}`)
     } catch (error: any) {
-      setError(error.message || 'Failed to create workspace')
+      toast.error('Failed to create workspace', error.message || 'An unexpected error occurred')
     } finally {
       setIsCreating(false)
     }
@@ -95,12 +96,6 @@ export default function CreateWorkspacePage() {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-              {error && (
-                <Alert variant="destructive">
-                  <AlertDescription>{error}</AlertDescription>
-                </Alert>
-              )}
-
               <div className="space-y-2">
                 <Label htmlFor="name">Workspace Name</Label>
                 <Input

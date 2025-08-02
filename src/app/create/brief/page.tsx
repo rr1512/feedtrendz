@@ -406,7 +406,7 @@ export default function CreateBriefPage() {
                 onFilesChange={handleFilesChange}
                 disabled={isLoading}
                 maxFiles={10}
-                accept={['image/*', 'video/*', 'application/pdf', 'application/zip']}
+                accept={['image/*', 'video/*', 'audio/*', 'application/pdf', 'application/zip']}
               />
             </CardContent>
           </Card>

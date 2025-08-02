@@ -5,8 +5,8 @@ import { useDropzone } from 'react-dropzone'
 import { Button } from './button'
 import { Card, CardContent } from './card'
 import { Badge } from './badge'
-import { Upload, X, File, Image, Video, FileText, AlertCircle, CheckCircle } from 'lucide-react'
-import { formatFileSize, isImageFile, isVideoFile } from '@/frontend/lib/utils'
+import { Upload, X, File, Image, Video, FileText, AlertCircle, CheckCircle, FileAudio } from 'lucide-react'
+import { formatFileSize, isImageFile, isVideoFile, isAudioFile } from '@/frontend/lib/utils'
 import { cn } from '@/frontend/lib/utils'
 
 interface UploadedFile {
@@ -42,7 +42,7 @@ export function FileUpload({
   isEditingMaterial = true,
   maxFiles = 10,
   maxSize = 10 * 1024 * 1024, // 10MB
-  accept = ['image/*', 'video/*', 'application/pdf'],
+  accept = ['image/*', 'video/*', 'audio/*', 'application/pdf'],
   onUploadSuccess,
   onUploadError,
   onFilesChange,
@@ -179,6 +179,8 @@ export function FileUpload({
       return <Image className="h-4 w-4" />
     } else if (isVideoFile(file.name)) {
       return <Video className="h-4 w-4" />
+    } else if (isAudioFile(file.name)) {
+      return <FileAudio className="h-4 w-4" />
     } else {
       return <FileText className="h-4 w-4" />
     }

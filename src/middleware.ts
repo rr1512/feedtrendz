@@ -34,7 +34,8 @@ export async function middleware(request: NextRequest) {
       pathname === '/api/auth/logout' ||
       pathname === '/api/health' ||
       pathname === '/api/test-db' ||
-      pathname.startsWith('/api/setup/')
+      pathname.startsWith('/api/setup/') ||
+      pathname.startsWith('/api/files/public/') // Allow public file access for social media
     ) {
       return NextResponse.next()
     }

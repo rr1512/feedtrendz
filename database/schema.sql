@@ -69,6 +69,7 @@ CREATE TABLE IF NOT EXISTS social_accounts (
     workspace_id UUID NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
     platform VARCHAR(50) NOT NULL CHECK (platform IN ('facebook', 'instagram', 'tiktok', 'threads', 'youtube')),
     account_name VARCHAR(255) NOT NULL,
+    account_id TEXT, -- External platform account ID (e.g., Facebook Page ID, Instagram Business Account ID)
     access_token TEXT NOT NULL,
     refresh_token TEXT,
     expires_at TIMESTAMP WITH TIME ZONE,

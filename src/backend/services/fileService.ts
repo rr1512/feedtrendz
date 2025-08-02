@@ -199,4 +199,28 @@ export class FileService {
       errors
     }
   }
+
+  // Get file info by ID
+  static async getFileById(fileId: string) {
+    try {
+      const { data: file, error } = await supabaseAdmin
+        .from('content_files')
+        .select('*')
+        .eq('id', fileId)
+        .single()
+
+      if (error) {
+        throw new Error(`File not found: ${error.message}`)
+      }
+
+      return file
+    } catch (error) {
+      throw error
+    }
+  }
+
+  // Get file path for download
+  static getFilePath(fileName: string): string {
+    return path.join(this.uploadDir, fileName)
+  }
 }

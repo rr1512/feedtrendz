@@ -20,21 +20,38 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       )
     }
 
+    console.log('Downloading file with ID:', params.id)
+
     // Get file info from database
     const file = await FileService.getFileById(params.id)
     
     if (!file) {
+      console.log('File not found in database:', params.id)
       return NextResponse.json(
         { success: false, error: 'File not found' },
         { status: 404 }
       )
     }
 
-    // Extract filename from file_url (e.g., "/uploads/filename.jpg" -> "filename.jpg")
-    const fileName = path.basename(file.file_url)
-    const filePath = FileService.getFilePath(fileName)
+    console.log('File found:', file)
+
+    // Use the actual file_url path from database
+    // file.file_url is something like "/uploads/workspaceId/contentId/filename.jpg"
+    const filePath = path.join(process.cwd(), 'public', file.file_url)
+    
+    console.log('File path:', filePath)
 
     try {
+      // Check if file exists
+      const fs = require('fs')
+      if (!fs.existsSync(filePath)) {
+        console.error('File does not exist at path:', filePath)
+        return NextResponse.json(
+          { success: false, error: 'File not found on disk' },
+          { status: 404 }
+        )
+      }
+
       // Read file from disk
       const fileBuffer = await readFile(filePath)
       
@@ -44,12 +61,15 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       headers.set('Content-Disposition', `attachment; filename="${file.file_name}"`)
       headers.set('Content-Length', fileBuffer.length.toString())
       
+      console.log('File download successful:', file.file_name)
+      
       return new NextResponse(fileBuffer, {
         status: 200,
         headers: headers
       })
     } catch (fileError) {
       console.error('File read error:', fileError)
+      console.error('Attempted file path:', filePath)
       return NextResponse.json(
         { success: false, error: 'File not accessible' },
         { status: 404 }
@@ -61,34 +81,6 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     
     return NextResponse.json(
       { success: false, error: error.message || 'Failed to download file' },
-      { status: 500 }
-    )
-  }
-}
-
-export async function DELETE(request: NextRequest, { params }: RouteParams) {
-  try {
-    const userId = request.headers.get('x-user-id')
-    
-    if (!userId) {
-      return NextResponse.json(
-        { success: false, error: 'Authentication required' },
-        { status: 401 }
-      )
-    }
-
-    await FileService.deleteFile(params.id)
-
-    return NextResponse.json({
-      success: true,
-      message: 'File deleted successfully'
-    })
-
-  } catch (error: any) {
-    console.error('File delete error:', error)
-    
-    return NextResponse.json(
-      { success: false, error: error.message || 'Failed to delete file' },
       { status: 500 }
     )
   }

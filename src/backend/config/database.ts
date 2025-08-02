@@ -164,6 +164,7 @@ export type Database = {
           workspace_id: string
           platform: 'facebook' | 'instagram' | 'tiktok' | 'threads' | 'youtube'
           account_name: string
+          account_id?: string
           access_token: string
           refresh_token?: string
           expires_at?: string
@@ -176,6 +177,7 @@ export type Database = {
           workspace_id: string
           platform: 'facebook' | 'instagram' | 'tiktok' | 'threads' | 'youtube'
           account_name: string
+          account_id?: string
           access_token: string
           refresh_token?: string
           expires_at?: string
@@ -185,6 +187,7 @@ export type Database = {
         }
         Update: {
           account_name?: string
+          account_id?: string
           access_token?: string
           refresh_token?: string
           expires_at?: string

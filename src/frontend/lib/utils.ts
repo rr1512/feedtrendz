@@ -51,6 +51,12 @@ export function isVideoFile(filename: string) {
   return videoExtensions.includes(extension)
 }
 
+export function isAudioFile(filename: string) {
+  const audioExtensions = ['mp3', 'wav', 'ogg', 'aac', 'flac', 'm4a', 'wma']
+  const extension = getFileExtension(filename).toLowerCase()
+  return audioExtensions.includes(extension)
+}
+
 export function generateId() {
   return Math.random().toString(36).substring(2) + Date.now().toString(36)
 }
